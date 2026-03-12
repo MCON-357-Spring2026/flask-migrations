@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from .extensions import db
 from .models import Student, Assignment, Grade
-
+from datetime import date
 api = Blueprint("main", __name__)
 
 
@@ -10,12 +10,12 @@ def home():
     return {
         "message": "Flask migrations lesson app",
         "endpoints": [
-            "GET /students",
-            "POST /students",
-            "GET /assignments",
-            "POST /assignments",
-            "GET /grades",
-            "POST /grades",
+            "GET /exercises/students",
+            "POST /exercises/students",
+            "GET /exercises/assignments",
+            "POST /exercises/assignments",
+            "GET /exercises/grades",
+            "POST /exercises/grades",
         ],
     }
 
@@ -58,11 +58,13 @@ def create_assignment():
 
     title = data.get("title")
     max_score = data.get("max_score")
+    due_date_string = data.get("due_date")
+    parsed_date = date.fromisoformat(due_date_string)
 
     if not title or max_score is None:
         return jsonify({"error": "title and max_score are required"}), 400
 
-    assignment = Assignment(title=title, max_score=max_score)
+    assignment = Assignment(title=title, max_score=max_score, due_date=parsed_date)
     db.session.add(assignment)
     db.session.commit()
     return jsonify(assignment.to_dict()), 201

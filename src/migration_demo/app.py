@@ -1,6 +1,6 @@
 import os
 from flask import Flask
-from .config import Config
+from .config import Config, DATA_DIR
 from .extensions import db, migrate
 from .routes import api
 
@@ -10,7 +10,7 @@ def create_app():
     # Load configuration from the Config class in config.py
     app.config.from_object(Config)
     # Ensure the instance folder exists
-    os.makedirs(app.instance_path, exist_ok=True)
+    os.makedirs(DATA_DIR, exist_ok=True)
     # Initialize extensions
 
     # database instance is created in extensions.py and imported here,

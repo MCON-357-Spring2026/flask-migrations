@@ -72,14 +72,18 @@ From the project root, run:
 flask --app src.migration_exercise.manage db init
 ```
 This creates the migrations/ folder.
+Add it to git so it is tracked by version control:
+```bash
+git add src/migration_exercises/migrations
+```
 
 Then generate the initial migration:
 ```bash
-flask --app src.migration_exercise.manage db migrate -m "initial schema"
+flask --app src.migration_exercises.manage db migrate -m "initial schema"
 ```
 Then apply it:
 ```bash
-flask --app src.migration_exercise.manage db upgrade
+flask --app src.migration_exercises.manage db upgrade
 ``` 
 At this point, your database should contain these tables:
 
@@ -91,7 +95,7 @@ At this point, your database should contain these tables:
 
 Run:
 ```bash
-flask --app src.migration_exercise.manage run
+flask --app src.migration_exercises.manage run
 ```
 ## Test a few endpoints.
 
@@ -99,21 +103,21 @@ flask --app src.migration_exercise.manage run
 
 From postman or curl, send:
 ```html
-POST /students
+POST /exercises/students
 Content-Type: application/json
 {
 "name": "Ava",
 "email": "ava@example.com"
 }
 Create an assignment
-POST /assignments
+POST /exercises/assignments
 Content-Type: application/json
 {
 "title": "ORM Practice",
 "max_score": 100
 }
 Create a grade
-POST /grades
+POST /exercises/grades
 Content-Type: application/json
 {
 "score": 95,

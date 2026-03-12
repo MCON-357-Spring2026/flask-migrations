@@ -1,42 +1,77 @@
-# Flask ORM Repo (Flask-SQLAlchemy + Flask Test Client)
+# Flask Migrations
 
-This repo teaches Flask ORM using Flask-SQLAlchemy and reuses database concepts from the previous lesson:
-tables, constraints, relationships, joins, and transactions.
+This repo demonstrates how to use Flask-Migrate to manage database schema changes in a Flask application. It includes exercises to practice creating and applying migrations, as well as evolving the database schema over time. The README provides step-by-step instructions for setting up the project, running migrations, and testing the API endpoints.
 
-## Structure
-- `data/` — generated SQLite DB files (ignored by git)
-- `src/demo/flask_orm/` — Flask app factory + models + routes (reference solution)
-- `src/demo/demo.py` — demo script that seeds in-memory data
-- `src/exercises/` — in-class exercises (implement TODOs in `exercises.py`)
-
-- `tests/` — pytest tests (functions + API routes)
-- `.github/` — GitHub Classroom autograding using `education/autograding@v1`
-
-## Setup
+## To initialize the database run from repo root:
 ```bash
-python -m venv .venv
-source .venv/bin/activate   # mac/linux
-# .venv\\Scripts\\activate  # windows
-pip install -r requirements.txt
+flask --app src.migration_demo.manage:app db init 
+```
+Check that the `migrations/` folder is created.
+## To generate a migration after making changes to the models:
+```bash
+flask --app src.migration_demo.manage:app db migrate -m "Initial migration"
+```
+Check that a new migration file is created in the `migrations/versions/` folder with the expected schema changes.
+## To apply the migration to the database:
+```bash
+flask --app src.migration_demo.manage:app db upgrade
+```
+Check that sqlite3 database file is created in the data directory and that the schema matches the models defined in `app.py`. You can also test the API endpoints to confirm that the application is working as expected.
+
+Now run the demo application:
+  ```bash
+flask --app src.migration_demo.manage:app run
+  ```
+You can test the API endpoints using curl or Postman to confirm that the application is working as
+
+Load initial data by running 
+  ```bash
+scripts/create_initial_data.sh
+```
+or 
+```cmd
+scripts\create_initial_data.bat
+  ```
+
+Change model definition for student by adding a cohort field:
+```python
+class Student(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=False)
+    # add this new field to the model
+    cohort = db.Column(db.String(128), nullable=True)  # New field for cohort
 ```
 
-## Run servers / demos
-- Demo reference app (uses solution code):
-  ```bash
-  python -m src.demo.flask_orm.run
-  ```
-- Exercises API (calls your implementations):
-  ```bash
-  python -m src.exercises.run
-  ```
-
-## What to implement
-- `src/exercises/exercises.py`: all ORM functions (CRUD, queries, aggregation, updates, filtering).
-- `src/homework/homework.py`: homework-gradebook helpers (assignments, grades, reports, leaderboard).
-
-## Run tests
+Then generate a new migration to reflect this change:
 ```bash
-pytest -q tests/test_exercises.py          # function-level exercises
-pytest -q tests/test_exercises_routes.py   # API routes powered by your exercises
-pytest -q                                  # everything
+flask --app src.migration_demo.manage:app db migrate -m "Add cohort field to Student model"
 ```
+Apply the migration:
+```bash
+flask --app src.migration_demo.manage:app db upgrade
+```
+Now the database schema should be updated to include the new `cohort` field in the `students` table. 
+We have to  update the API endpoints to allow setting and retrieving the cohort information for students.
+
+We will update the POST endpoint to create a student with a cohort:
+```python
+@app.route('/students', methods=['POST'])
+def create_student():
+    data = request.get_json()
+    name = data.get('name')
+    cohort = data.get('cohort')  # Get cohort from request data
+    if not name:
+        return jsonify({'error': 'Name is required'}), 400
+    student = Student(name=name, cohort=cohort)  # Set cohort when creating student
+    db.session.add(student)
+    db.session.commit()
+    return jsonify({'id': student.id, 'name': student.name, 'cohort': student.cohort}), 201  # Include cohort in response
+```
+And we will update the GET endpoint to include cohort information in the response:
+```python   
+@app.route('/students', methods=['GET'])
+def get_students():
+    students = Student.query.all()
+    return jsonify([{'id': student.id, 'name': student.name, 'cohort': student.cohort} for student in students])  # Include cohort in response
+```     
+We can now test the updated API endpoints to confirm that we can create students with cohort information and retrieve it correctly.
