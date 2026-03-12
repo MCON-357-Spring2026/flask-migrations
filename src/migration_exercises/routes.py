@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+
 from .extensions import db
 from .models import Student, Assignment, Grade
 from datetime import date
@@ -58,12 +59,15 @@ def create_assignment():
 
     title = data.get("title")
     max_score = data.get("max_score")
-    due_date_string = data.get("due_date")
-    parsed_date = date.fromisoformat(due_date_string)
-
+    due_date_string = data.get("due_date", None)
     if not title or max_score is None:
         return jsonify({"error": "title and max_score are required"}), 400
-
+    parsed_date=None
+    if due_date_string:
+        try:
+            parsed_date = date.fromisoformat(due_date_string)
+        except Exception as ex:
+            return jsonify({"error": f"Provided date {due_date_string} is not valid"}), 400
     assignment = Assignment(title=title, max_score=max_score, due_date=parsed_date)
     db.session.add(assignment)
     db.session.commit()
@@ -94,8 +98,8 @@ def create_grade():
         return jsonify({"error": "student not found"}), 404
     if assignment is None:
         return jsonify({"error": "assignment not found"}), 404
-
-    grade = Grade(score=score, student_id=student_id, assignment_id=assignment_id)
+    comment = data.get("comment",None)
+    grade = Grade(score=score, student_id=student_id, assignment_id=assignment_id, comment=comment)
     db.session.add(grade)
     db.session.commit()
     return jsonify(grade.to_dict()), 201
